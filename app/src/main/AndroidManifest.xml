@@ -8,7 +8,18 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/Theme.TermProject">
+        <activity
+            android:name=".ViewListingActivity"
+            android:parentActivityName=".HomeActivity"
+            android:label="ViewListing">
+        </activity>
+        <activity
+            android:name=".CreateListingActivity"
+            android:parentActivityName=".HomeActivity"
+            android:label="CreateListing">
+        </activity>
+        <activity android:name=".HomeActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

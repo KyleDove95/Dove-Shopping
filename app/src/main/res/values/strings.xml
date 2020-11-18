@@ -1,3 +1,14 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Dove Shopping</string>
+    <string name="nameHint">Product name</string>
+    <string name="priceHint">Price</string>
+    <string name="descriptionHint">Product description</string>
+    <string name="email">Email</string>
+    <string name="password_label">Password</string>
+    <string name="hello">Welcome %1$s!</string>
+    <string name="logout">Logout</string>
+    <string name="login">Login</string>
+    <string name="register">Create New Account</string>
+    <string name="productName">Product name:</string>
+    <string name="productPrice">Price:</string>
 </resources>

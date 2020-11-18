@@ -11,14 +11,12 @@
         android:theme="@style/Theme.TermProject">
         <activity
             android:name=".ViewListingActivity"
-            android:parentActivityName=".HomeActivity"
-            android:label="ViewListing">
-        </activity>
+            android:label="ViewListing"
+            android:parentActivityName=".HomeActivity"></activity>
         <activity
             android:name=".CreateListingActivity"
-            android:parentActivityName=".HomeActivity"
-            android:label="CreateListing">
-        </activity>
+            android:label="CreateListing"
+            android:parentActivityName=".HomeActivity" />
         <activity android:name=".HomeActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>

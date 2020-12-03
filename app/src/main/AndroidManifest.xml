@@ -10,9 +10,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TermProject">
         <activity
+            android:name=".EditActivity"
+            android:parentActivityName=".HomeActivity" />
+        <activity
             android:name=".ViewListingActivity"
             android:label="ViewListing"
-            android:parentActivityName=".HomeActivity"></activity>
+            android:parentActivityName=".HomeActivity" />
         <activity
             android:name=".CreateListingActivity"
             android:label="CreateListing"

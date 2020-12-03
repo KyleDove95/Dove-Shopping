@@ -4,11 +4,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,14 +21,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.myapplication.Listing;
+import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -34,6 +44,9 @@ public class HomeActivity extends AppCompatActivity {
     private FirebaseFirestore mDb = FirebaseFirestore.getInstance();
     ArrayList<Listing> listingList = new ArrayList<>();
     private ArrayAdapter<Listing> adapter;
+    private RecyclerAdapter mAdapter;
+
+    private static final String LISTINGS = "listings";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,62 +56,82 @@ public class HomeActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ListView listingListView = findViewById(R.id.listingListView);
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 1));
 
-        mDb.collection("listings").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+        Query query = mDb.collection(LISTINGS);
+        FirestoreRecyclerOptions<Listing> options = new FirestoreRecyclerOptions.Builder<Listing>()
+                .setQuery(query, Listing.class)
+                .build();
+
+        mAdapter = new RecyclerAdapter(options, new RecyclerAdapter.OnItemClickListener() {
             @Override
-            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                for(QueryDocumentSnapshot document: queryDocumentSnapshots) {
-                    Listing listing = document.toObject(Listing.class);
-                    listingList.add(listing);
+            public void onItemClick(int position) {
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                Listing selectedListing = mAdapter.getSnapshots().getSnapshot(position).toObject(Listing.class);
+                String email = user.getEmail();
+                String selectedEmail = selectedListing.getEmail();
+                if(email.equals(selectedEmail)){
+                    String id = mAdapter.getSnapshots().getSnapshot(position).getId();
+
+                    Intent intent = new Intent(HomeActivity.this, EditActivity.class);
+                    intent.putExtra("LISTING_ID", id);
+                    startActivity(intent);
+
                 }
-                adapter.addAll(listingList);
+                else {
+
+                    Intent intent = new Intent(HomeActivity.this, ViewListingActivity.class);
+                    intent.putExtra("VIEWED_NAME", selectedListing.getItemName());
+                    intent.putExtra("VIEWED_PRICE", Double.toString(selectedListing.getPrice()));
+                    intent.putExtra("VIEWED_DESCRIPTION", selectedListing.getItemDescription());
+                    intent.putExtra("VIEWED_EMAIL", selectedListing.getEmail());
+                    startActivity(intent);
+                }
             }
         });
+        recyclerView.setAdapter(mAdapter);
 
-//        adapter = new ArrayAdapter<Listing>(this, android.R.layout.simple_list_item_1, new ArrayList<Listing>());
-        adapter = new ListingAdapter(this, new ArrayList<Listing>());
-        listingListView.setAdapter(adapter);
-
-        listingListView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+        EditText searchBar = findViewById(R.id.searchBar);
+        searchBar.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                startActivity(new Intent(HomeActivity.this, ViewListingActivity.class));
-                Listing selectedListing = listingList.get(position);
-                Intent intent = new Intent(HomeActivity.this, ViewListingActivity.class);
-                intent.putExtra("VIEWED_NAME", selectedListing.getItemName());
-                intent.putExtra("VIEWED_PRICE", Double.toString(selectedListing.getPrice()));
-                intent.putExtra("VIEWED_DESCRIPTION", selectedListing.getItemDescription());
-                startActivity(intent);
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
             }
 
-        });
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
 
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                Query query;
+                if(s.toString().isEmpty()){
+                    query = mDb.collection(LISTINGS);
+                }
+                else {
+                    query = mDb.collection(LISTINGS).whereEqualTo("itemName", s.toString());
+                }
+                FirestoreRecyclerOptions<Listing> options = new FirestoreRecyclerOptions.Builder<Listing>()
+                        .setQuery(query, Listing.class)
+                        .build();
+                mAdapter.updateOptions(options);
+            }
+        });
     }
 
-    class ListingAdapter extends  ArrayAdapter<Listing> {
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mAdapter.startListening();
+    }
 
-        ArrayList<Listing> listing;
-        ListingAdapter(Context context, ArrayList<Listing> listing) {
-            super(context, 0, listing);
-            this.listing = listing;
-        }
-
-        @NonNull
-        @Override
-        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-            if(convertView == null) {
-                convertView = LayoutInflater.from(getContext()).inflate(R.layout.listview_layout, parent, false);
-            }
-            TextView productName = convertView.findViewById(R.id.editName);
-            TextView productPrice = convertView.findViewById(R.id.editPrice);
-
-            Listing list = listing.get(position);
-            productName.setText(list.getItemName());
-            productPrice.setText("$" + String.format("%.2f", list.getPrice()));
-
-            return convertView;
-
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mAdapter != null) {
+            mAdapter.stopListening();
         }
     }
 

@@ -11,4 +11,5 @@
     <string name="register">Create New Account</string>
     <string name="productName">Product name:</string>
     <string name="productPrice">Price:</string>
+    <string name="productUser">Posted by:</string>
 </resources>
